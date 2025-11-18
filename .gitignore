@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+main.js
+*.js.map
+
+# Development
+.DS_Store
+.vscode/
+.idea/
+
+# Obsidian
+data.json
+
+# Testing
+test-vault/
+
+# Temp files
+*.tmp
+*.log
+.env
+.env.local
+
+# TypeScript
+*.tsbuildinfo
+
+# Package manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

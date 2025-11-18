@@ -1,0 +1,10 @@
+{
+	"id": "link-video-transcriber",
+	"name": "Link Video Transcriber",
+	"version": "0.1.0",
+	"minAppVersion": "1.4.0",
+	"description": "Automatically transcribe videos from any platform (YouTube, Instagram, X, TikTok, etc.) into searchable Obsidian notes with AI summaries using Whisper and RapidAPI.",
+	"author": "Link Video Transcriber Team",
+	"authorUrl": "https://github.com/prophesourvolodymyr/GigsTranscriptObsidian-",
+	"isDesktopOnly": false
+}
