@@ -1,6 +1,7 @@
 import { Notice } from 'obsidian';
 import { DetectedVideoLink, VideoPlatform } from '../types';
 import { isVideoUrl, identifyPlatform, extractVideoId } from '../constants';
+import { URLExpander } from './URLExpander';
 import LinkVideoTranscriberPlugin from '../main';
 
 /**
@@ -9,9 +10,11 @@ import LinkVideoTranscriberPlugin from '../main';
 export class LinkDetector {
   private plugin: LinkVideoTranscriberPlugin;
   private detectedLinks: Map<string, DetectedVideoLink> = new Map();
+  private urlExpander: URLExpander;
 
   constructor(plugin: LinkVideoTranscriberPlugin) {
     this.plugin = plugin;
+    this.urlExpander = new URLExpander(plugin.settings.debugMode);
   }
 
   /**
@@ -25,7 +28,20 @@ export class LinkDetector {
     const urls = this.extractUrls(text);
     const videoLinks: DetectedVideoLink[] = [];
 
-    for (const url of urls) {
+    for (let url of urls) {
+      // Expand shortened URLs if enabled
+      if (this.plugin.settings.expandShortenedUrls && this.urlExpander.isShortened(url)) {
+        try {
+          url = await this.urlExpander.expand(url);
+          if (this.plugin.settings.debugMode) {
+            console.log('Expanded URL:', url);
+          }
+        } catch (error) {
+          console.warn('Failed to expand URL:', url, error);
+          // Continue with original URL
+        }
+      }
+
       if (isVideoUrl(url)) {
         const platform = identifyPlatform(url);
         if (platform) {

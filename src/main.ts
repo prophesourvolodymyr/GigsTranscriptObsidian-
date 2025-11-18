@@ -4,12 +4,20 @@ import { LinkVideoTranscriberSettingTab } from './ui/SettingsTab';
 import { LinkDetector } from './core/LinkDetector';
 import { ConfirmationModal } from './ui/ConfirmationModal';
 import { TranscriptCache } from './core/TranscriptCache';
+import { TranscriptionQueue } from './core/TranscriptionQueue';
+import { CostCalculator } from './core/CostCalculator';
+import { RateLimitTracker } from './core/RateLimitTracker';
+import { CanvasDetector } from './core/CanvasDetector';
 import { PLUGIN_NAME } from './constants';
 
 export default class LinkVideoTranscriberPlugin extends Plugin {
   settings: LinkVideoTranscriberSettings;
   linkDetector: LinkDetector;
   cache: TranscriptCache;
+  queue: TranscriptionQueue;
+  costCalculator: CostCalculator;
+  rateLimitTracker: RateLimitTracker;
+  canvasDetector: CanvasDetector;
 
   async onload() {
     console.log(`Loading ${PLUGIN_NAME}`);
@@ -25,8 +33,20 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
     );
     await this.cache.load();
 
+    // Initialize cost calculator
+    this.costCalculator = new CostCalculator(this.app, this.settings.debugMode);
+    await this.costCalculator.load();
+
+    // Initialize rate limit tracker
+    this.rateLimitTracker = new RateLimitTracker(this.settings.debugMode);
+
+    // Initialize queue
+    this.queue = new TranscriptionQueue(this.settings.debugMode);
+    this.queue.setProcessFunction((link) => this.transcribeVideo(link));
+
     // Initialize core components
     this.linkDetector = new LinkDetector(this);
+    this.canvasDetector = new CanvasDetector(this.app, this.settings.debugMode);
 
     // Register event listeners
     this.registerEventListeners();
@@ -68,13 +88,42 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
 
     // Canvas detection
     if (this.settings.autoDetectCanvas) {
-      // TODO: Implement canvas detection
+      this.registerCanvasDetection();
     }
 
     // Excalidraw detection
     if (this.settings.autoDetectExcalidraw) {
-      // TODO: Implement Excalidraw detection
+      // TODO: Implement Excalidraw detection (future enhancement)
     }
+  }
+
+  /**
+   * Register Canvas file detection
+   */
+  private registerCanvasDetection() {
+    this.registerEvent(
+      this.app.workspace.on('file-open', async (file: TFile) => {
+        if (!file || !this.settings.autoDetectCanvas) return;
+
+        // Only scan Canvas files
+        if (!this.canvasDetector.isCanvasFile(file)) return;
+
+        // Scan Canvas file for video links
+        const links = await this.canvasDetector.scanCanvasFile(file);
+
+        if (links.length > 0) {
+          new Notice(`Found ${links.length} video link(s) in Canvas`);
+
+          // Add to queue for batch processing
+          if (links.length > 1) {
+            this.queue.addMultiple(links);
+          } else {
+            // Single link - show confirmation
+            await this.handleDetectedLink(links[0]);
+          }
+        }
+      })
+    );
   }
 
   /**
@@ -147,8 +196,95 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
       id: 'open-queue',
       name: 'Open transcription queue',
       callback: () => {
-        // TODO: Implement queue UI
-        new Notice('Queue UI coming soon');
+        this.showQueueStatus();
+      },
+    });
+
+    // View cost summary
+    this.addCommand({
+      id: 'view-cost-summary',
+      name: 'View cost summary',
+      callback: () => {
+        this.showCostSummary();
+      },
+    });
+
+    // View cache statistics
+    this.addCommand({
+      id: 'view-cache-stats',
+      name: 'View cache statistics',
+      callback: () => {
+        this.showCacheStats();
+      },
+    });
+
+    // Clear cache
+    this.addCommand({
+      id: 'clear-cache',
+      name: 'Clear transcript cache',
+      callback: async () => {
+        this.cache.clear();
+        new Notice('Transcript cache cleared');
+      },
+    });
+
+    // Pause queue
+    this.addCommand({
+      id: 'pause-queue',
+      name: 'Pause transcription queue',
+      callback: () => {
+        this.queue.pause();
+      },
+    });
+
+    // Resume queue
+    this.addCommand({
+      id: 'resume-queue',
+      name: 'Resume transcription queue',
+      callback: () => {
+        this.queue.resume();
+      },
+    });
+
+    // Stop queue
+    this.addCommand({
+      id: 'stop-queue',
+      name: 'Stop transcription queue',
+      callback: () => {
+        this.queue.stop();
+      },
+    });
+
+    // Scan current Canvas for videos
+    this.addCommand({
+      id: 'scan-canvas',
+      name: 'Scan current Canvas for videos',
+      checkCallback: (checking: boolean) => {
+        const activeFile = this.app.workspace.getActiveFile();
+        if (activeFile && this.canvasDetector.isCanvasFile(activeFile)) {
+          if (!checking) {
+            this.canvasDetector.scanCanvasFile(activeFile).then((links) => {
+              if (links.length > 0) {
+                this.queue.addMultiple(links);
+              } else {
+                new Notice('No video links found in Canvas');
+              }
+            });
+          }
+          return true;
+        }
+        return false;
+      },
+    });
+
+    // Export cost data
+    this.addCommand({
+      id: 'export-costs',
+      name: 'Export cost data as CSV',
+      callback: () => {
+        const csv = this.costCalculator.exportAsCSV();
+        navigator.clipboard.writeText(csv);
+        new Notice('Cost data copied to clipboard as CSV');
       },
     });
 
@@ -163,6 +299,71 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
         this.app.setting.openTabById(this.manifest.id);
       },
     });
+  }
+
+  /**
+   * Show queue status
+   */
+  private showQueueStatus() {
+    const stats = this.queue.getStatistics();
+    const message = `
+📊 **Queue Status**
+
+Total: ${stats.total}
+⏳ Pending: ${stats.pending}
+⚙️ Processing: ${stats.processing}
+✅ Completed: ${stats.completed}
+❌ Failed: ${stats.failed}
+🚫 Cancelled: ${stats.cancelled}
+
+${this.queue.isActive() ? '▶️ Queue is running' : '⏸️ Queue is paused'}
+    `.trim();
+
+    new Notice(message, 8000);
+  }
+
+  /**
+   * Show cost summary
+   */
+  private showCostSummary() {
+    const summary = this.costCalculator.getSummary();
+    const monthTotal = this.costCalculator.getCurrentMonthTotal();
+
+    const byServiceLines = Object.entries(summary.byService)
+      .map(([service, cost]) => `  ${service}: $${cost.toFixed(4)}`)
+      .join('\n');
+
+    const message = `
+💰 **Cost Summary**
+
+**Total All-Time**: $${summary.totalCost.toFixed(4)}
+**Current Month**: $${monthTotal.toFixed(4)}
+**Total Requests**: ${summary.entryCount}
+
+**By Service**:
+${byServiceLines}
+    `.trim();
+
+    new Notice(message, 10000);
+  }
+
+  /**
+   * Show cache statistics
+   */
+  private showCacheStats() {
+    const stats = this.cache.getStats();
+    const sizeMB = (stats.cacheSize / (1024 * 1024)).toFixed(2);
+
+    const message = `
+📦 **Cache Statistics**
+
+**Cached Transcripts**: ${stats.totalEntries}
+**Cache Size**: ${sizeMB} MB
+
+Use "Clear transcript cache" command to free space.
+    `.trim();
+
+    new Notice(message, 6000);
   }
 
   /**
@@ -236,11 +437,18 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
       });
 
       // 1. Fetch video metadata
+      // Check rate limit
+      this.rateLimitTracker.checkLimit('rapidapi');
+
       const rapidApi = new RapidAPIClient(this.settings.rapidApiKey, this.settings.debugMode);
       const metadata = await errorHandler.withRetry(
         () => rapidApi.extractVideo(link.url, link.platform),
         { maxRetries: 3 }
       );
+
+      // Track API usage
+      this.rateLimitTracker.trackRequest('rapidapi');
+      this.costCalculator.trackRapidAPICost(link.platform, { videoId: link.videoId });
 
       progressModal.setVideoTitle(metadata.title);
       progressModal.update({
@@ -271,11 +479,21 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
         throw new Error('Local Whisper not yet implemented. Please use API transcription in settings.');
       }
 
+      // Check rate limit for Whisper
+      this.rateLimitTracker.checkLimit('whisper');
+
       const whisper = new WhisperAPITranscriber(this.settings.openaiApiKey, this.settings.debugMode);
       const transcription = await errorHandler.withRetry(
         () => whisper.transcribe(audioFilePath),
         { maxRetries: 2 }
       );
+
+      // Track Whisper usage and cost
+      this.rateLimitTracker.trackRequest('whisper');
+      this.costCalculator.trackWhisperCost(metadata.duration, {
+        videoId: link.videoId,
+        platform: link.platform,
+      });
 
       // 4. Generate AI summary (if enabled)
       let summary;
