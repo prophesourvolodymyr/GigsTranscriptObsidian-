@@ -8,11 +8,14 @@ import { TranscriptionQueue } from './core/TranscriptionQueue';
 import { CostCalculator } from './core/CostCalculator';
 import { RateLimitTracker } from './core/RateLimitTracker';
 import { CanvasDetector } from './core/CanvasDetector';
+import { ExcalidrawDetector } from './core/ExcalidrawDetector';
 import { FolderBlacklist } from './core/FolderBlacklist';
 import { APIFallbackManager } from './core/APIFallbackManager';
 import { NotificationManager } from './core/NotificationManager';
 import { SmartRetryManager } from './core/SmartRetryManager';
 import { BatchExporter } from './core/BatchExporter';
+import { MetadataEnricher } from './core/MetadataEnricher';
+import { AudioPreprocessor } from './utils/AudioPreprocessor';
 import { PLUGIN_NAME } from './constants';
 
 export default class LinkVideoTranscriberPlugin extends Plugin {
@@ -23,6 +26,9 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
   costCalculator: CostCalculator;
   rateLimitTracker: RateLimitTracker;
   canvasDetector: CanvasDetector;
+  excalidrawDetector: ExcalidrawDetector;
+  audioPreprocessor: AudioPreprocessor;
+  metadataEnricher: MetadataEnricher;
   folderBlacklist: FolderBlacklist;
   apiFallbackManager: APIFallbackManager;
   notificationManager: NotificationManager;
@@ -84,6 +90,15 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
     // Initialize core components
     this.linkDetector = new LinkDetector(this);
     this.canvasDetector = new CanvasDetector(this.app, this.settings.debugMode);
+    this.excalidrawDetector = new ExcalidrawDetector(this, this.settings.debugMode);
+
+    // Initialize utilities
+    const tempDir = this.app.vault.adapter.basePath + '/.obsidian/plugins/link-video-transcriber/temp';
+    this.audioPreprocessor = new AudioPreprocessor(tempDir, this.settings.debugMode);
+    this.metadataEnricher = new MetadataEnricher(
+      this.settings.rapidApiKey,
+      this.settings.debugMode
+    );
 
     // Show onboarding if first time
     if (!this.settings.hasCompletedOnboarding) {
@@ -314,6 +329,28 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
                 this.queue.addMultiple(links);
               } else {
                 new Notice('No video links found in Canvas');
+              }
+            });
+          }
+          return true;
+        }
+        return false;
+      },
+    });
+
+    // Scan current Excalidraw for videos
+    this.addCommand({
+      id: 'scan-excalidraw',
+      name: 'Scan current Excalidraw for videos',
+      checkCallback: (checking: boolean) => {
+        const activeFile = this.app.workspace.getActiveFile();
+        if (activeFile && this.excalidrawDetector.isExcalidrawFile(activeFile)) {
+          if (!checking) {
+            this.excalidrawDetector.detectInFile(activeFile).then((links) => {
+              if (links.length > 0) {
+                this.queue.addMultiple(links);
+              } else {
+                new Notice('No video links found in Excalidraw');
               }
             });
           }
