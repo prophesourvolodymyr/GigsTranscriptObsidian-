@@ -8,6 +8,11 @@ import { TranscriptionQueue } from './core/TranscriptionQueue';
 import { CostCalculator } from './core/CostCalculator';
 import { RateLimitTracker } from './core/RateLimitTracker';
 import { CanvasDetector } from './core/CanvasDetector';
+import { FolderBlacklist } from './core/FolderBlacklist';
+import { APIFallbackManager } from './core/APIFallbackManager';
+import { NotificationManager } from './core/NotificationManager';
+import { SmartRetryManager } from './core/SmartRetryManager';
+import { BatchExporter } from './core/BatchExporter';
 import { PLUGIN_NAME } from './constants';
 
 export default class LinkVideoTranscriberPlugin extends Plugin {
@@ -18,6 +23,11 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
   costCalculator: CostCalculator;
   rateLimitTracker: RateLimitTracker;
   canvasDetector: CanvasDetector;
+  folderBlacklist: FolderBlacklist;
+  apiFallbackManager: APIFallbackManager;
+  notificationManager: NotificationManager;
+  retryManager: SmartRetryManager;
+  batchExporter: BatchExporter;
 
   async onload() {
     console.log(`Loading ${PLUGIN_NAME}`);
@@ -40,6 +50,33 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
     // Initialize rate limit tracker
     this.rateLimitTracker = new RateLimitTracker(this.settings.debugMode);
 
+    // Initialize folder blacklist
+    this.folderBlacklist = new FolderBlacklist(
+      this.settings.folderBlacklist || [],
+      this.settings.debugMode
+    );
+
+    // Initialize API fallback manager
+    this.apiFallbackManager = new APIFallbackManager(
+      this.settings.rapidApiKey,
+      this.settings.debugMode
+    );
+
+    // Initialize notification manager
+    this.notificationManager = new NotificationManager(
+      {
+        enabled: this.settings.showNotifications !== false,
+        quietMode: this.settings.quietMode || false,
+      },
+      this.settings.debugMode
+    );
+
+    // Initialize retry manager
+    this.retryManager = new SmartRetryManager(this.settings.debugMode);
+
+    // Initialize batch exporter
+    this.batchExporter = new BatchExporter(this.app, this.settings.debugMode);
+
     // Initialize queue
     this.queue = new TranscriptionQueue(this.settings.debugMode);
     this.queue.setProcessFunction((link) => this.transcribeVideo(link));
@@ -47,6 +84,11 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
     // Initialize core components
     this.linkDetector = new LinkDetector(this);
     this.canvasDetector = new CanvasDetector(this.app, this.settings.debugMode);
+
+    // Show onboarding if first time
+    if (!this.settings.hasCompletedOnboarding) {
+      this.showOnboarding();
+    }
 
     // Register event listeners
     this.registerEventListeners();
@@ -167,6 +209,7 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
     this.addCommand({
       id: 'transcribe-from-clipboard',
       name: 'Transcribe video from clipboard',
+      hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 'V' }],
       callback: async () => {
         const clipboard = await navigator.clipboard.readText();
         if (clipboard) {
@@ -181,6 +224,7 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
     this.addCommand({
       id: 'transcribe-selection',
       name: 'Transcribe video from selection',
+      hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 'T' }],
       editorCallback: (editor) => {
         const selection = editor.getSelection();
         if (selection) {
@@ -195,6 +239,7 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
     this.addCommand({
       id: 'open-queue',
       name: 'Open transcription queue',
+      hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 'Q' }],
       callback: () => {
         this.showQueueStatus();
       },
@@ -204,6 +249,7 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
     this.addCommand({
       id: 'view-cost-summary',
       name: 'View cost summary',
+      hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 'C' }],
       callback: () => {
         this.showCostSummary();
       },
@@ -285,6 +331,40 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
         const csv = this.costCalculator.exportAsCSV();
         navigator.clipboard.writeText(csv);
         new Notice('Cost data copied to clipboard as CSV');
+      },
+    });
+
+    // Open debug panel
+    this.addCommand({
+      id: 'open-debug-panel',
+      name: 'Open debug panel',
+      callback: () => {
+        this.showDebugPanel();
+      },
+    });
+
+    // View failed transcriptions
+    this.addCommand({
+      id: 'view-failed-transcriptions',
+      name: 'View failed transcriptions',
+      callback: () => {
+        this.showFailedTranscriptions();
+      },
+    });
+
+    // Retry failed transcriptions
+    this.addCommand({
+      id: 'retry-failed',
+      name: 'Retry failed transcriptions',
+      callback: () => {
+        const failed = this.retryManager.getFailedTranscriptions();
+        if (failed.length === 0) {
+          new Notice('No failed transcriptions to retry');
+        } else {
+          const retryable = failed.filter((f) => f.canRetry);
+          this.queue.addMultiple(retryable.map((f) => f.link));
+          new Notice(`Added ${retryable.length} failed items to retry queue`);
+        }
       },
     });
 
@@ -571,13 +651,22 @@ Use "Clear transcript cache" command to free space.
       progressModal.complete();
       await noteGenerator.openNote(noteFile);
 
+      // Mark as successful in retry manager
+      this.retryManager.markSuccess(link);
+
       new Notice('✅ Transcription complete!');
     } catch (error) {
+      // Record failure for smart retry
+      this.retryManager.recordFailure(link, error);
+
       errorHandler.showError(error);
       errorHandler.logError(error, 'transcribeVideo');
       if (progressModal) {
         progressModal.error(error.message || 'Transcription failed');
       }
+
+      // Rethrow to let queue handler know it failed
+      throw error;
     }
   }
 

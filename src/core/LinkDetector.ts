@@ -73,6 +73,14 @@ export class LinkDetector {
    * Scan file content for video links
    */
   async scanFileContent(content: string, filePath: string): Promise<DetectedVideoLink[]> {
+    // Check if file is in blacklisted folder
+    if (this.plugin.folderBlacklist && this.plugin.folderBlacklist.isPathBlacklisted(filePath)) {
+      if (this.plugin.settings.debugMode) {
+        console.log('File in blacklisted folder, skipping:', filePath);
+      }
+      return [];
+    }
+
     return this.detectInText(content, 'markdown', filePath);
   }
 
