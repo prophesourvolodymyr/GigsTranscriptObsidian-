@@ -1,0 +1,10 @@
+{
+  "id": "obsitermishell",
+  "name": "Obsitermishell",
+  "version": "2.0.0",
+  "minAppVersion": "1.4.0",
+  "description": "Real PTY terminal for Obsidian on desktop and mobile — connect to your server, run AI CLIs like Claude or Codex, and manage multiple sessions with full theming",
+  "author": "prophesourvolodymyr",
+  "authorUrl": "https://github.com/prophesourvolodymyr/Obsitermishell",
+  "isDesktopOnly": false
+}

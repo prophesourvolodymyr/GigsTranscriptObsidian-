@@ -1,0 +1,379 @@
+{
+  "main": {
+    "id": "21288b51c9db2b01",
+    "type": "split",
+    "children": [
+      {
+        "id": "3b089d5a97ea0021",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c06ea462b85e2de5",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "NOTES/General APP  Documentation/N1 APP idea simplifyed.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "N1 APP idea simplifyed"
+            }
+          },
+          {
+            "id": "582318424a126511",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "INSTRUCTIONS/NOTES IDEA SYNC.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "NOTES IDEA SYNC"
+            }
+          },
+          {
+            "id": "29e23ce867d5b5ba",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "NOTES/IDEA Main/N1 Project overview..md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "N1 Project overview."
+            }
+          },
+          {
+            "id": "1db01c04b7b04d28",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "NOTES/IDEA Main/N3 RapidAPI Integration Architecture.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "N3 RapidAPI Integration Architecture"
+            }
+          },
+          {
+            "id": "8bfe8d37eb83e2f8",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "NOTES/PROMPTS/PROMPT-1-PLANNING.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "PROMPT-1-PLANNING"
+            }
+          },
+          {
+            "id": "b99ce8f4afc75b21",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "School & Notes Feature/AI visual learning Research.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "AI visual learning Research"
+            }
+          },
+          {
+            "id": "4803cc9e980efe31",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "copilot/copilot-custom-prompts/Fix grammar and spelling.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Fix grammar and spelling"
+            }
+          },
+          {
+            "id": "58960b93e5a79ae4",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          },
+          {
+            "id": "4ec1f73cdcea48cb",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "School & Notes Feature/Automatic Homework Completion White paper.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Automatic Homework Completion White paper"
+            }
+          },
+          {
+            "id": "ed50a8046f016371",
+            "type": "leaf",
+            "state": {
+              "type": "excalidraw",
+              "state": {
+                "file": "Excalidraw/Drawing 2025-11-08 11.25.24.excalidraw.md"
+              },
+              "icon": "lucide-ghost",
+              "title": "excalidraw"
+            }
+          },
+          {
+            "id": "0d84297bc1b91b99",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "NOTES/General APP  Documentation/N1 APP idea simplifyed.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "N1 APP idea simplifyed"
+            }
+          }
+        ],
+        "currentTab": 4
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "e4ead3b0e0bcb992",
+    "type": "split",
+    "children": [
+      {
+        "id": "2c2c509b0519f20e",
+        "type": "tabs",
+        "dimension": 68.05929919137466,
+        "children": [
+          {
+            "id": "584d9d6252bc2b4c",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "a0deff3812af43c5",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "3a1af8deba8f8998",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      },
+      {
+        "id": "16ba3237dcd451cd",
+        "type": "tabs",
+        "dimension": 31.940700808625337,
+        "children": [
+          {
+            "id": "165d8acbcfbda749",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 218.5
+  },
+  "right": {
+    "id": "fe56e51921efc750",
+    "type": "split",
+    "children": [
+      {
+        "id": "024c3db3c734c883",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "0bdb123765240d53",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "School & Notes Feature/VISUAL NOTES.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for VISUAL NOTES"
+            }
+          },
+          {
+            "id": "3deb9b241c77b6c0",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Automatic Homework Completion White paper.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from Automatic Homework Completion White paper"
+            }
+          },
+          {
+            "id": "66578476dcf4eedf",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "7a340a7a4d5ad971",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "NOTES/PROMPTS/PROMPT-1-PLANNING.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of PROMPT-1-PLANNING"
+            }
+          },
+          {
+            "id": "812b7b17a22b3332",
+            "type": "leaf",
+            "state": {
+              "type": "obsitermishell-terminal",
+              "state": {},
+              "icon": "terminal",
+              "title": "Terminal"
+            }
+          }
+        ],
+        "currentTab": 4
+      }
+    ],
+    "direction": "horizontal",
+    "width": 460.5
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "canvas:Create new canvas": false,
+      "graph:Open graph view": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false,
+      "workspaces:Manage workspace layouts": false,
+      "obsidian-excalidraw-plugin:New drawing": false,
+      "obsidian-kanban:Create new board": false,
+      "obsitermishell:Open Terminal": false,
+      "obsitermishell:Pause Terminal Daemon": false
+    }
+  },
+  "active": "812b7b17a22b3332",
+  "lastOpenFiles": [
+    "README.md",
+    "Automation.md",
+    "NOTES/PROMPTS",
+    "NOTES/PROMPTS/PROMPT-4-EXCELLENCE.md",
+    "NOTES/IDEA Main/N3 RapidAPI Integration Architecture.md",
+    "NOTES/PROMPTS/PROMPT-3-REFINEMENT.md",
+    "NOTES/PROMPTS/PROMPT-2-IMPLEMENTATION.md",
+    "NOTES/PROMPTS/PROMPT-1-PLANNING.md",
+    "NOTES/IDEA Main/N2 Link Video Transcriber White Paper.md",
+    "NOTES/IDEA Main/N1 Project overview..md",
+    "INSTRUCTIONS/Notes Idea Sync.md",
+    "NOTES/IDEA Main",
+    "INSTRUCTIONS/PROMPTS WORKFLOW IDEA.md",
+    "WORK/GENERAL-AI-GUIDE.md",
+    "WORK/USER TODO.md",
+    "WORK/PROGRESS.md",
+    "WORK/USER GUIDE.md",
+    "INSTRUCTIONS/vRELEASE.md",
+    "INSTRUCTIONS/GIT GUIDE.md",
+    "INSTRUCTIONS/CODEBASE-Quick Start.md",
+    "INSTRUCTIONS/LINEAR_SYNC.md",
+    "INSTRUCTIONS/PROJECT-INIT-GUIDE.md",
+    "FEATURES/Features Done",
+    "FEATURES/START WITH f1 when naming the theme.md",
+    "WORK",
+    "NOTES",
+    "INSTRUCTIONS",
+    "FEATURES",
+    "NOTES/PROMPTS/PROMPT-3-REFINEMENT.md",
+    "NOTES/PROMPTS/PROMPT-2-IMPLEMENTATION.md",
+    "NOTES/PROMPTS/PROMPT-1-GENERAL-PLANNING.md",
+    "NOTES/PROMPTS/PROMPT-4-REVERSE-ENGINEERING.md",
+    "NOTES/PROMPTS",
+    "NOTES/General APP  Documentation",
+    "themes/Border/theme.css",
+    "269EA8D4-9C62-48F7-919A-A3440799337C_1_105_c.jpeg"
+  ]
+}

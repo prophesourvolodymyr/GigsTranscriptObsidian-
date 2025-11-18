@@ -1,0 +1,37 @@
+{
+  "shellPath": "",
+  "defaultCwdMode": "vault",
+  "scrollback": 10000,
+  "fontSize": 14,
+  "cursorStyle": "block",
+  "cursorBlink": true,
+  "cursorAccent": "#00ff41",
+  "terminalForeground": "#11ff00",
+  "terminalBackground": "",
+  "cursorAnimation": "glow",
+  "activeThemePreset": "matrix",
+  "donationLink": "https://github.com/sponsors/prophesourvolodymyr",
+  "workWithMeLink": "https://github.com/prophesourvolodymyr/Obsitermishell#work-with-me",
+  "repositoryLink": "https://github.com/prophesourvolodymyr/Obsitermishell",
+  "websiteLink": "https://github.com/prophesourvolodymyr/Obsitermishell#readme",
+  "profiles": [
+    {
+      "id": "default",
+      "name": "Default",
+      "init": "",
+      "cwdMode": "vault"
+    }
+  ],
+  "restoreSessions": false,
+  "enableSearch": true,
+  "enableWebLinks": true,
+  "showWelcomeBanner": true,
+  "showCoffeeBanner": false,
+  "backgroundImage": "",
+  "backgroundOpacity": 0.3,
+  "enableRemoteConnections": false,
+  "remoteAuthToken": "",
+  "remoteHost": "",
+  "remotePort": 37492,
+  "daemonPaused": false
+}

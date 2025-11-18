@@ -1,0 +1,11 @@
+{
+  "hidden": true,
+  "hiddenList": [
+    "src",
+    "# Code Citations.md",
+    "recovery list",
+    "professors-plugin",
+    "node_modules",
+    "public"
+  ]
+}
