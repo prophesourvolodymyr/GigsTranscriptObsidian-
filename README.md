@@ -18,6 +18,7 @@ Link Video Transcriber automatically detects video URLs in your notes, extracts 
 - **Pinterest** (Video pins)
 - **Threads** (Video posts)
 - **Telegram** (Channel videos)
+- **Local Files** (MP4, MOV, AVI, MKV, WEBM, M4V, FLV, WMV)
 
 ### 🤖 AI-Powered Transcription
 - **OpenAI Whisper API** - High-accuracy cloud transcription
@@ -154,6 +155,28 @@ Link Video Transcriber requires API keys for video extraction and transcription:
 3. Select videos to transcribe
 4. Transcripts link back to Canvas nodes
 
+### Local Video Files
+
+**Direct Transcription:**
+1. Open any MP4/video file in Obsidian
+2. Run command: "Transcribe current local video file"
+3. Audio extracted and transcribed automatically
+
+**Embedded Videos:**
+1. Embed video in note: `![[lecture.mp4]]` or `![](video.mp4)`
+2. Run command: "Scan current file for local video embeds"
+3. All embedded videos transcribed
+
+**Excalidraw Integration:**
+1. Reference videos in Excalidraw drawings
+2. Videos automatically detected and can be transcribed
+3. Supports both text references and embedded files
+
+**Requirements:**
+- FFmpeg must be installed on your system
+- Maximum file size: 500MB (for processing efficiency)
+- Supported formats: MP4, MOV, AVI, MKV, WEBM, M4V, FLV, WMV
+
 ### Cost Management
 
 - View costs: `Cmd/Ctrl + Shift + C`
@@ -175,6 +198,7 @@ Link Video Transcriber requires API keys for video extraction and transcription:
 | Pinterest | ✅ Good | Video pins | Basic support |
 | Threads | ✅ Good | Video posts | Basic support |
 | Telegram | 🧪 Experimental | Channel videos | Limited testing |
+| **Local Files** | ✅ **Excellent** | **MP4, MOV, AVI, MKV, WEBM, M4V** | **Requires FFmpeg** |
 
 ---
 
@@ -336,6 +360,20 @@ tags: {{#each tags}}{{this}} {{/each}}
 3. Use Gemini (free tier) for summaries
 4. Set up budget alerts in settings
 5. Export cost reports monthly
+
+### Local Video Files Won't Transcribe
+
+**Problem:** Error when transcribing MP4/local video files
+
+**Solutions:**
+1. Install FFmpeg on your system:
+   - **Windows**: Download from ffmpeg.org or use `choco install ffmpeg`
+   - **macOS**: Run `brew install ffmpeg`
+   - **Linux**: Run `sudo apt-get install ffmpeg` (Ubuntu/Debian)
+2. Restart Obsidian after installing FFmpeg
+3. Check file size (max 500MB)
+4. Verify file format is supported (MP4, MOV, AVI, MKV, WEBM, M4V, FLV, WMV)
+5. Check Debug Panel for detailed error messages
 
 ---
 
