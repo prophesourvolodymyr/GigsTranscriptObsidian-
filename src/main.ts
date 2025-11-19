@@ -9,6 +9,7 @@ import { CostCalculator } from './core/CostCalculator';
 import { RateLimitTracker } from './core/RateLimitTracker';
 import { CanvasDetector } from './core/CanvasDetector';
 import { ExcalidrawDetector } from './core/ExcalidrawDetector';
+import { LocalVideoDetector } from './core/LocalVideoDetector';
 import { FolderBlacklist } from './core/FolderBlacklist';
 import { APIFallbackManager } from './core/APIFallbackManager';
 import { NotificationManager } from './core/NotificationManager';
@@ -27,6 +28,7 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
   rateLimitTracker: RateLimitTracker;
   canvasDetector: CanvasDetector;
   excalidrawDetector: ExcalidrawDetector;
+  localVideoDetector: LocalVideoDetector;
   audioPreprocessor: AudioPreprocessor;
   metadataEnricher: MetadataEnricher;
   folderBlacklist: FolderBlacklist;
@@ -91,6 +93,7 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
     this.linkDetector = new LinkDetector(this);
     this.canvasDetector = new CanvasDetector(this.app, this.settings.debugMode);
     this.excalidrawDetector = new ExcalidrawDetector(this, this.settings.debugMode);
+    this.localVideoDetector = new LocalVideoDetector(this, this.settings.debugMode);
 
     // Initialize utilities
     const tempDir = this.app.vault.adapter.basePath + '/.obsidian/plugins/link-video-transcriber/temp';
@@ -405,6 +408,67 @@ export default class LinkVideoTranscriberPlugin extends Plugin {
       },
     });
 
+    // Transcribe current local video file
+    this.addCommand({
+      id: 'transcribe-local-video',
+      name: 'Transcribe current local video file',
+      checkCallback: (checking: boolean) => {
+        const activeFile = this.app.workspace.getActiveFile();
+        if (activeFile && this.localVideoDetector.isVideoFile(activeFile)) {
+          if (!checking) {
+            this.transcribeLocalVideo(activeFile);
+          }
+          return true;
+        }
+        return false;
+      },
+    });
+
+    // Scan current file for local video embeds
+    this.addCommand({
+      id: 'scan-file-local-videos',
+      name: 'Scan current file for local video embeds',
+      callback: async () => {
+        const activeFile = this.app.workspace.getActiveFile();
+        if (!activeFile) {
+          new Notice('No active file');
+          return;
+        }
+
+        const videos = await this.localVideoDetector.scanFile(activeFile);
+        if (videos.length === 0) {
+          new Notice('No local video embeds found');
+        } else {
+          new Notice(`Found ${videos.length} local video(s) - adding to queue...`);
+          for (const video of videos) {
+            await this.transcribeLocalVideo(video.file);
+          }
+        }
+      },
+    });
+
+    // List all local videos in vault
+    this.addCommand({
+      id: 'list-local-videos',
+      name: 'List all local video files in vault',
+      callback: async () => {
+        const stats = await this.localVideoDetector.getStatistics();
+
+        let message = `Found ${stats.totalVideoFiles} video file(s)\n`;
+        message += `Total size: ${stats.totalSizeMB} MB\n\n`;
+        message += 'By extension:\n';
+        for (const [ext, count] of Object.entries(stats.filesByExtension)) {
+          message += `${ext}: ${count}\n`;
+        }
+
+        if (stats.largestFile) {
+          message += `\nLargest: ${stats.largestFile.name} (${stats.largestFile.sizeMB} MB)`;
+        }
+
+        new Notice(message, 10000);
+      },
+    });
+
     // Configure settings
     this.addCommand({
       id: 'open-settings',
@@ -703,6 +767,161 @@ Use "Clear transcript cache" command to free space.
       }
 
       // Rethrow to let queue handler know it failed
+      throw error;
+    }
+  }
+
+  /**
+   * Transcribe local video file (MP4, MOV, etc.)
+   */
+  async transcribeLocalVideo(file: TFile) {
+    const { WhisperAPITranscriber } = await import('./api/WhisperAPITranscriber');
+    const { NoteGenerator } = await import('./core/NoteGenerator');
+    const { ErrorHandler } = await import('./core/ErrorHandler');
+    const { ProgressModal } = await import('./ui/ProgressModal');
+    const { AIProviderManager } = await import('./ai/AIProvider');
+    const { OpenAIProvider } = await import('./ai/OpenAIProvider');
+    const { GeminiProvider } = await import('./ai/GeminiProvider');
+    const { ClaudeProvider } = await import('./ai/ClaudeProvider');
+
+    const errorHandler = new ErrorHandler(this.settings.debugMode);
+    const progressModal = new ProgressModal(this.app, file.name);
+
+    try {
+      // Check file size
+      const fileSizeMB = this.localVideoDetector.getFileSizeMB(file);
+      if (fileSizeMB > 500) {
+        throw new Error(`Video file is too large (${fileSizeMB.toFixed(1)} MB). Maximum size is 500MB.`);
+      }
+
+      progressModal.open();
+      progressModal.update({
+        stage: 'detecting',
+        percent: 5,
+        message: 'Preparing local video file...',
+        details: `Size: ${fileSizeMB.toFixed(1)} MB`,
+      });
+
+      // Get absolute file path
+      const videoPath = this.localVideoDetector.getAbsolutePath(file);
+
+      // Extract audio from video using AudioPreprocessor
+      progressModal.update({
+        stage: 'downloading-audio',
+        percent: 15,
+        message: 'Extracting audio from video...',
+      });
+
+      const audioPath = await this.audioPreprocessor.extractAudioFromVideo(videoPath);
+
+      // Optimize for Whisper if needed
+      progressModal.update({
+        stage: 'downloading-audio',
+        percent: 30,
+        message: 'Optimizing audio for transcription...',
+      });
+
+      const optimizedAudioPath = await this.audioPreprocessor.optimizeForWhisper(audioPath);
+
+      // Transcribe using Whisper
+      progressModal.update({
+        stage: 'transcribing',
+        percent: 40,
+        message: 'Transcribing audio...',
+        details: 'This may take a few moments',
+      });
+
+      this.rateLimitTracker.checkLimit('whisper');
+
+      const whisper = new WhisperAPITranscriber(this.settings.openaiApiKey, this.settings.debugMode);
+      const transcription = await errorHandler.withRetry(
+        () => whisper.transcribe(optimizedAudioPath),
+        { maxRetries: 2 }
+      );
+
+      // Track Whisper usage
+      this.rateLimitTracker.trackRequest('whisper');
+      const durationMinutes = transcription.duration ? transcription.duration / 60 : 5;
+      this.costCalculator.trackWhisperCost(durationMinutes);
+
+      // Generate AI summary if enabled
+      let summary = null;
+      if (this.settings.enableAiSummary) {
+        progressModal.update({
+          stage: 'ai-processing',
+          percent: 70,
+          message: 'Generating AI summary...',
+        });
+
+        const aiManager = new AIProviderManager();
+
+        // Initialize selected provider
+        const provider = this.settings.defaultAiProvider;
+        if (provider === 'openai') {
+          aiManager.addProvider(
+            new OpenAIProvider(this.settings.openaiApiKey, this.settings.debugMode)
+          );
+        } else if (provider === 'gemini') {
+          aiManager.addProvider(
+            new GeminiProvider(this.settings.geminiApiKey, this.settings.debugMode)
+          );
+        } else if (provider === 'claude') {
+          aiManager.addProvider(
+            new ClaudeProvider(this.settings.claudeApiKey, this.settings.debugMode)
+          );
+        }
+
+        summary = await aiManager.generateSummary(transcription.text, {
+          provider,
+          style: this.settings.aiSummaryStyle,
+          includeKeyPoints: this.settings.includeKeyPoints,
+          includeQuotes: this.settings.includeQuotes,
+          includeQuestions: this.settings.includeQuestions,
+          includeChapters: this.settings.includeChapters,
+        });
+
+        // Track AI cost
+        const wordCount = transcription.text.split(/\s+/).length;
+        this.costCalculator.trackAICost(provider, wordCount);
+      }
+
+      // Create metadata for local file
+      const metadata = {
+        title: file.basename,
+        author: 'Local File',
+        platform: 'local' as any,
+        url: file.path,
+        videoId: file.name,
+        duration: transcription.duration || 0,
+        description: `Local video file: ${file.path}`,
+      };
+
+      // Generate note
+      progressModal.update({
+        stage: 'creating-note',
+        percent: 90,
+        message: 'Creating transcript note...',
+      });
+
+      const noteGenerator = new NoteGenerator(this.app, this.settings);
+      const templateData = this.buildTemplateData(metadata, transcription, summary);
+      const noteFile = await noteGenerator.generateNote(templateData);
+
+      // Complete
+      progressModal.complete();
+      await noteGenerator.openNote(noteFile);
+
+      new Notice(`✅ Local video transcribed: ${file.name}`);
+
+      // Clean up temp files
+      this.audioPreprocessor.cleanupTempFiles([audioPath, optimizedAudioPath]);
+    } catch (error) {
+      errorHandler.showError(error);
+      errorHandler.logError(error, 'transcribeLocalVideo');
+      if (progressModal) {
+        progressModal.error(error.message || 'Transcription failed');
+      }
+
       throw error;
     }
   }

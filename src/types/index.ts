@@ -293,6 +293,24 @@ export interface DetectedVideoLink {
   };
 }
 
+export interface DetectedLocalVideo {
+  filePath: string;
+  fileName: string;
+  fileSize: number;
+  extension: string;
+  context: 'attachment' | 'embed' | 'direct';
+  sourceFile?: string;
+  isLocal: true; // Flag to differentiate from URL-based videos
+}
+
+// Union type for both URL and local video sources
+export type VideoSource = DetectedVideoLink | DetectedLocalVideo;
+
+// Type guard for local videos
+export function isLocalVideo(source: VideoSource): source is DetectedLocalVideo {
+  return 'isLocal' in source && source.isLocal === true;
+}
+
 // ============================================================================
 // Progress Types
 // ============================================================================
